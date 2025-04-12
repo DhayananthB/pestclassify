@@ -174,7 +174,7 @@ remedies = {
 }
 
 @app.post("/predict")
-async def predict_image(file: UploadFile = File(...), lang: str = Query("en")):
+async def predict_image(file: UploadFile = File(...), lang: str = Query(default="en")):
     try:
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
@@ -186,17 +186,14 @@ async def predict_image(file: UploadFile = File(...), lang: str = Query("en")):
         outputs = model(**inputs)
         logits = outputs.logits
         predicted_class_idx = logits.argmax(-1).item()
-        predicted_label = model.config.id2label[predicted_class_idx]
+        predicted_label = model.config.id2label.get(predicted_class_idx, "Invalid")
 
-    remedy_info = remedies.get(predicted_label, {}).get(lang, {
-        "disease": predicted_label,
-        "remedy": "No remedy info available.",
-        "medicine": "N/A"
-    })
+    # Fallback if lang not available
+    lang = lang if lang in ["en", "ta"] else "en"
+    remedy_info = disease_info.get(predicted_label, disease_info["Invalid"]).get(lang, {})
 
     return {
-        "predicted_class": predicted_label,
-        "disease_name": remedy_info["disease"],
-        "remedy": remedy_info["remedy"],
-        "medicine": remedy_info["medicine"]
+        "disease_name": predicted_label,
+        "remedy": remedy_info.get("remedy", "Remedy not available"),
+        "medicine": remedy_info.get("medicine", "Medicine not available")
     }
