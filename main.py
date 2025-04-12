@@ -190,7 +190,7 @@ async def predict_image(file: UploadFile = File(...), lang: str = Query(default=
 
     # Fallback if lang not available
     lang = lang if lang in ["en", "ta"] else "en"
-    remedy_info = disease_info.get(predicted_label, disease_info["Invalid"]).get(lang, {})
+    remedy_info = remedies.get(predicted_label, remedies["Invalid"]).get(lang, {})
 
     return {
         "disease_name": predicted_label,
